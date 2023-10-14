@@ -9,7 +9,7 @@ class Parser
         @process_fn = process_fn
     end
 
-    def init()
+    private def init()
         @last_date = nil
         @last_author = nil
         @line_no = 1
