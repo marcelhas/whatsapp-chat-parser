@@ -34,7 +34,7 @@ def write_read_this_file(path, url, created)
     end
 end
 
-def write_use_this_file(path, url, created)
+def write_use_this_file(path, url, created, keywords)
     p = OUT + "/" +  path
     if File.exist?(p) 
         raise "File #{path} already exists!"
@@ -46,7 +46,10 @@ def write_use_this_file(path, url, created)
         file.puts("  - meta/todo")
         file.puts("created: #{created}")
         file.puts("url: #{url}")
-        file.puts("keywords: ")
+        file.puts("keywords:")
+        if keywords.length > 0
+            file.puts(keywords)
+        end
         file.puts("---")
         # Summary.
         file.puts("> TODO: Add summary.")
@@ -79,18 +82,24 @@ process_read_fn = lambda do |msg|
 end
 
 process_use_fn = lambda do |msg|
-    puts msg
     if msg[:author] == "masl"
         path = "use"
         mkdir(path)
         
-        filename = mk_filename(msg[:content])
         if msg[:content] == ""
             return # Ignore.
         end
-        url = msg[:content]
         created = msg[:date].strftime("%Y-%m-%d")
-        write_use_this_file("#{path}/#{filename}", url, created)
+        lines = msg[:content].split("\n")
+        url = lines[0]
+        filename = mk_filename(url)
+        keywords = ""
+        if lines.length == 2
+            keywords = lines[1].split(" ").map{|s| "  - #{s}"}.join("\n").downcase
+        elsif lines.length != 1 and lines.length != 2
+            raise "Invalid multiline!"
+        end
+        write_use_this_file("#{path}/#{filename}", url, created, keywords)
     else
         # Ignore.
     end
