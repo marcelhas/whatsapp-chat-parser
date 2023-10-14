@@ -1,0 +1,6 @@
+# Input and Output.
+input.txt
+out/
+# Nix.
+.direnv/
+
