@@ -1,18 +1,16 @@
 require 'date'
+require_relative 'lib'
 
 OUT="./out"
-
 def mkdir(path)
-    dir = OUT+"/"+path
-    if Dir.exist?(dir)
-        return
+    dir = OUT + "/" + path
+    if !Dir.exist?(dir)
+        Dir.mkdir(dir)
     end
-    Dir.mkdir(dir)
 end
 
-def write_file(path, url, created)
+def write_read_this_file(path, url, created)
     p = OUT + "/" +  path
-    puts(p)
     if File.exist?(p) 
         raise "File #{path} already exists!"
     end
@@ -36,6 +34,26 @@ def write_file(path, url, created)
     end
 end
 
+def write_use_this_file(path, url, created)
+    p = OUT + "/" +  path
+    if File.exist?(p) 
+        raise "File #{path} already exists!"
+    end
+    File.open(p, "w") do |file|
+        # Properties.
+        file.puts("---")
+        file.puts("tags:")
+        file.puts("  - meta/todo")
+        file.puts("created: #{created}")
+        file.puts("url: #{url}")
+        file.puts("keywords: ")
+        file.puts("---")
+        # Summary.
+        file.puts("> TODO: Add summary.")
+        file.puts("")
+    end
+end
+
 def mk_filename(url)
     re = /\/([^\/]+)\/?$/
     if url =~ re
@@ -45,34 +63,43 @@ def mk_filename(url)
     end
 end
 
-last_date = nil
-mkdir("")
-File.readlines('input.txt', chomp: true).each do |line|
-    re = /^\d{2}\/\d{2}\/\d{4}/
-    dateStr = line.slice(0, 10)
-    startsWithDate = re.match?(dateStr)  
-    if !startsWithDate and last_date == nil
-        raise "Line is missing associated date!"
-    end
-
-    date = last_date
-    if startsWithDate 
-        date = Date.parse(dateStr)
-        last_date = date
-    end
-
-    contentRe = /masl\: (.*)/
-    match = contentRe.match(line)
-    if match
-        puts(date.to_s + ": " + match[1])
-        path = date.strftime("%Y-%m")
+process_read_fn = lambda do |msg|
+    puts msg
+    if msg[:author] == "masl"
+        path = "read/#{msg[:date].strftime("%Y-%m")}"
         mkdir(path)
-        url = match[1]
-        filename = mk_filename(url)
-        created = date.strftime("%Y-%m-%d")
-        write_file("#{path}/#{filename}", url, created)
+        
+        filename = mk_filename(msg[:content])
+        url = msg[:content]
+        created = msg[:date].strftime("%Y-%m-%d")
+        write_read_this_file("#{path}/#{filename}", url, created)
     else
         # Ignore.
     end
 end
 
+process_use_fn = lambda do |msg|
+    puts msg
+    if msg[:author] == "masl"
+        path = "use"
+        mkdir(path)
+        
+        filename = mk_filename(msg[:content])
+        if msg[:content] == ""
+            return # Ignore.
+        end
+        url = msg[:content]
+        created = msg[:date].strftime("%Y-%m-%d")
+        write_use_this_file("#{path}/#{filename}", url, created)
+    else
+        # Ignore.
+    end
+end
+
+mkdir("")
+mkdir("read")
+parser1 = Parser.new(File.readlines('input.txt', chomp: true), process_read_fn)
+parser1.parse()
+mkdir("use")
+parser2 = Parser.new(File.readlines('input2.txt', chomp: true), process_use_fn)
+parser2.parse()
