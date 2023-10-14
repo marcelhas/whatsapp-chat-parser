@@ -10,7 +10,7 @@ def mkdir(path)
 end
 
 def write_read_this_file(path, url, created)
-    p = OUT + "/" +  path
+    p = OUT + "/" + path + ".md"
     if File.exist?(p) 
         raise "File #{path} already exists!"
     end
@@ -35,7 +35,7 @@ def write_read_this_file(path, url, created)
 end
 
 def write_use_this_file(path, url, created, keywords)
-    p = OUT + "/" +  path
+    p = OUT + "/" +  path + ".md"
     if File.exist?(p) 
         raise "File #{path} already exists!"
     end
