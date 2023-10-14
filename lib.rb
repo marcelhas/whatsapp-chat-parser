@@ -13,6 +13,7 @@ class Parser
         @last_date = nil
         @last_author = nil
         @line_no = 1
+        @buf = nil
     end
     
     def parse()
@@ -20,6 +21,13 @@ class Parser
         @iterable.each do |line|
             date_re = /^(\d{2}\/\d{2}\/\d{4})\,\s(\d{2}:\d{2})/
             starts_with_date = date_re.match(line)  
+            if starts_with_date and @buf
+                # Ignore media files alltogether.
+                if @buf[:content] != "<Media omitted>"
+                    @process_fn.call(@buf)
+                end
+                @buf = nil
+            end
             if !starts_with_date and @last_date == nil
                 raise "Line #{@line_no} is missing associated date!"
             end
@@ -49,10 +57,12 @@ class Parser
                 content = line
             end
 
-            # Ignore media files alltogether.
-            if content != "<Media omitted>"
-                @process_fn.call({ author: author, date: date, content: content})
+            if @buf == nil
+                @buf = { author: author, date: date, content: content}
+            else
+                @buf = { author: author, date: date, content: @buf[:content] + "\n" + content}
             end
+
 
             @line_no += 1
         end
