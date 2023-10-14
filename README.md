@@ -35,3 +35,8 @@ parser.parse()
 ruby your_file.rb
 ```
 
+
+## License
+
+[MIT](./LICENSE) License © 2023-Present [marcelhas](https://github.com/marcelhas)
+
