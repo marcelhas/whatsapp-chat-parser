@@ -15,6 +15,14 @@ class Parser
         @line_no = 1
         @buf = nil
     end
+
+    private def emit()
+        # Ignore media files alltogether.
+        if @buf[:content] != "<Media omitted>"
+            @process_fn.call(@buf)
+        end
+        @buf = nil
+    end
     
     def parse()
         init()
@@ -22,11 +30,7 @@ class Parser
             date_re = /^(\d{2}\/\d{2}\/\d{4})\,\s(\d{2}:\d{2})/
             starts_with_date = date_re.match(line)  
             if starts_with_date and @buf
-                # Ignore media files alltogether.
-                if @buf[:content] != "<Media omitted>"
-                    @process_fn.call(@buf)
-                end
-                @buf = nil
+                emit()
             end
             if !starts_with_date and @last_date == nil
                 raise "Line #{@line_no} is missing associated date!"
@@ -65,6 +69,9 @@ class Parser
 
 
             @line_no += 1
+        end
+        if @buf != nil
+            emit()
         end
     end
 end
