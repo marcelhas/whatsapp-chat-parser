@@ -105,9 +105,12 @@ process_use_fn = lambda do |msg|
 end
 
 mkdir("")
+# Process `read this` files.
 mkdir("read")
 parser1 = Parser.new(File.readlines('input.txt', chomp: true), process_read_fn)
 parser1.parse()
+
+# Process `use this` files.
 mkdir("use")
 parser2 = Parser.new(File.readlines('input2.txt', chomp: true), process_use_fn)
 parser2.parse()
