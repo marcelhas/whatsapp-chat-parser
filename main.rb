@@ -67,7 +67,6 @@ def mk_filename(url)
 end
 
 process_read_fn = lambda do |msg|
-    puts msg
     if msg[:author] == "masl"
         path = "read/#{msg[:date].strftime("%Y-%m")}"
         mkdir(path)
