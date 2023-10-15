@@ -16,7 +16,7 @@ class Parser
         @buf = nil
     end
 
-    private def emit()
+    private def flush()
         # Ignore media files alltogether.
         if @buf[:content] != "<Media omitted>"
             @process_fn.call(@buf)
@@ -28,22 +28,22 @@ class Parser
         init()
         @iterable.each do |line|
             date_re = /^(\d{2}\/\d{2}\/\d{4})\,\s(\d{2}:\d{2})/
-            starts_with_date = date_re.match(line)  
-            if starts_with_date and @buf
-                emit()
+            is_new_msg = date_re.match(line)  
+            if is_new_msg and @buf
+                flush()
             end
-            if !starts_with_date and @last_date == nil
+            if !is_new_msg and @last_date == nil
                 raise "Line #{@line_no} is missing associated date!"
             end
 
-            if !starts_with_date and @last_author == nil
+            if !is_new_msg and @last_author == nil
                 raise "Line #{@line_no} is missing associated author!"
             end
 
             author = @last_author
             date = @last_date
             content = nil
-            if starts_with_date 
+            if is_new_msg 
                 dateStr = line.slice(0, DATE_LENGTH)
                 date = Date.parse(dateStr)
                 @last_date = date
@@ -71,7 +71,7 @@ class Parser
             @line_no += 1
         end
         if @buf != nil
-            emit()
+            flush()
         end
     end
 end
