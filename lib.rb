@@ -10,10 +10,8 @@ class Parser
     end
 
     private def init()
-        @last_date = nil
-        @last_author = nil
         @line_no = 1
-        @buf = nil
+        @buf = { author: nil, date: nil, content: nil }
     end
 
     private def flush()
@@ -21,58 +19,48 @@ class Parser
         if @buf[:content] != "<Media omitted>"
             @process_fn.call(@buf)
         end
-        @buf = nil
+        @buf[:author] = nil
+        @buf[:date] = nil
+        @buf[:content] = nil
     end
     
     def parse()
         init()
         @iterable.each do |line|
+            # Match example: "31/12/2023, 15:00".
             date_re = /^(\d{2}\/\d{2}\/\d{4})\,\s(\d{2}:\d{2})/
-            is_new_msg = date_re.match(line)  
-            if is_new_msg and @buf
-                flush()
-            end
-            if !is_new_msg and @last_date == nil
+            is_new_msg = date_re.match?(line)  
+
+            if !is_new_msg and @buf[:date] == nil
                 raise "Line #{@line_no} is missing associated date!"
             end
 
-            if !is_new_msg and @last_author == nil
+            if !is_new_msg and @buf[:author] == nil
                 raise "Line #{@line_no} is missing associated author!"
             end
 
-            author = @last_author
-            date = @last_date
-            content = nil
             if is_new_msg 
+                flush()
                 dateStr = line.slice(0, DATE_LENGTH)
-                date = Date.parse(dateStr)
-                @last_date = date
+                @buf[:date] = Date.parse(dateStr)
 
+                # Match example: "Marcel: Long content".
                 author_and_content_re = /([^:]*):\s(.*)$/
                 if author_and_content_re.match(line, LENGTH_UNTIL_CONTENT)
-                    author = $1
-                    content = $2
+                    @buf[:author] = $1
+                    @buf[:content] = $2
                 else
-                    author = "system"
-                    content = line[LENGTH_UNTIL_CONTENT..-1]
+                    @buf[:author] = "system"
+                    @buf[:content] = line[LENGTH_UNTIL_CONTENT..-1]
                 end
-                @last_author = author
             else
-                content = line
+                @buf[:content] += "\n" + line
             end
-
-            if @buf == nil
-                @buf = { author: author, date: date, content: content}
-            else
-                @buf = { author: author, date: date, content: @buf[:content] + "\n" + content}
-            end
-
 
             @line_no += 1
         end
-        if @buf != nil
-            flush()
-        end
+        # Always flush last message.
+        flush()
     end
 end
 
